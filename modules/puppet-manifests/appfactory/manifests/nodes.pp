@@ -594,6 +594,58 @@ node /clean.devsetup/ inherits confignode {
 
 }
 
+################################
+###Backing up Dev Setup node ###
+################################
+node /backup.devsetup/ inherits confignode {
+
+  $databases = [ 'afdb', $af_config_database_name, 'dbUserstore', 'dbGovernanceCloud', 'userstore', 'registry',
+    'bps_jpa_db', 'rss_mgt', 'af_config', 'identity_config', 'cloud_mgt_config','dbBps','dbRssMgt',
+    'dbApiMgt','dbApiStats', 'identity', 'cloud_mgt', 'issuetracker', 'appfactory',
+    'bam_config', 'bps_config', 'rss_mgt_config', 'ts_config', 'ues_config', 'apim_config','dbIssueTracker',
+    'apimdb', 'StratosStats', 'config', 'sm_config', 'as_config','dbIdentity','dbCloudMgt',
+    $bps_config_database_name,$identity_config_database_name,$cloud_mgt_config_database_name,
+    $bam_config_database_name,$rss_mgt_config_database_name,
+    $ts_config_database_name,$ues_config_database_name,$apim_config_database_name,
+    $dbApimStats,$dbAfStats,$dbLoginAnalytics,$hive_database,
+    $dev_registry_db_schema, $dev_userstore,$dev_config_db_schema,
+    $test_registry_db_schema,$test_userstore,$test_config_db_schema,
+    $prod_registry_db_schema,$prod_userstore, $prod_config_db_schema
+  ]
+
+  class {"mysql::backup":
+    databases => $databases,
+    dump_dir => '/mnt/backups/mysqldump'
+  }
+
+}
+
+##################################
+###Restoring up Dev Setup node ###
+##################################
+node /restore.devsetup/ inherits confignode {
+
+  $databases = [ 'afdb', $af_config_database_name, 'dbUserstore', 'dbGovernanceCloud', 'userstore', 'registry',
+    'bps_jpa_db', 'rss_mgt', 'af_config', 'identity_config', 'cloud_mgt_config','dbBps','dbRssMgt',
+    'dbApiMgt','dbApiStats', 'identity', 'cloud_mgt', 'issuetracker', 'appfactory',
+    'bam_config', 'bps_config', 'rss_mgt_config', 'ts_config', 'ues_config', 'apim_config','dbIssueTracker',
+    'apimdb', 'StratosStats', 'config', 'sm_config', 'as_config','dbIdentity','dbCloudMgt',
+    $bps_config_database_name,$identity_config_database_name,$cloud_mgt_config_database_name,
+    $bam_config_database_name,$rss_mgt_config_database_name,
+    $ts_config_database_name,$ues_config_database_name,$apim_config_database_name,
+    $dbApimStats,$dbAfStats,$dbLoginAnalytics,$hive_database,
+    $dev_registry_db_schema, $dev_userstore,$dev_config_db_schema,
+    $test_registry_db_schema,$test_userstore,$test_config_db_schema,
+    $prod_registry_db_schema,$prod_userstore, $prod_config_db_schema
+  ]
+
+  class {"mysql::restore":
+    databases => $databases,
+    dump_dir => '/mnt/backups/mysqldump'
+  }
+
+}
+
 ##############################
 ####### Database Setup #######
 ##############################

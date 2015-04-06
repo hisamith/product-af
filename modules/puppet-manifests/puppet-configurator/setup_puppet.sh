@@ -39,7 +39,10 @@ function _clean_and_update() {
 
         _echo_green "Pulling changes from the main repo.."
         git pull origin
-
+        if [ $? -ne 0 ]; then
+            _echo_red "\nSuccessfully applied the stashed changes..."
+            exit 1
+        fi
         read -p 'Do you want to apply the stashed changes?(y/n): ' response
         echo    # (optional) move to a new line
         if [[  $response =~ ^[Yy]$ ]]
