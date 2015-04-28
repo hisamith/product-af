@@ -22,7 +22,11 @@ import com.google.gson.Gson;
 import com.google.gson.reflect.TypeToken;
 import org.apache.axiom.om.OMElement;
 import org.apache.axiom.om.impl.builder.StAXOMBuilder;
-import org.apache.commons.httpclient.*;
+import org.apache.commons.httpclient.HttpClient;
+import org.apache.commons.httpclient.HttpException;
+import org.apache.commons.httpclient.HttpStatus;
+import org.apache.commons.httpclient.NameValuePair;
+import org.apache.commons.httpclient.UsernamePasswordCredentials;
 import org.apache.commons.httpclient.auth.AuthScope;
 import org.apache.commons.httpclient.methods.GetMethod;
 import org.apache.commons.logging.Log;
@@ -33,7 +37,6 @@ import org.wso2.carbon.appfactory.common.util.AppFactoryUtil;
 import org.wso2.carbon.appfactory.deployers.build.api.BuildStatusProvider;
 import org.wso2.carbon.appfactory.deployers.build.api.BuildStatusProviderException;
 import org.wso2.carbon.appfactory.jenkins.Constants;
-import org.wso2.carbon.appfactory.jenkins.artifact.storage.Utils;
 import org.wso2.carbon.appfactory.jenkins.util.JenkinsUtility;
 
 import javax.xml.namespace.QName;
@@ -59,7 +62,7 @@ public class JenkinsBuildStatusProvider implements BuildStatusProvider {
 			String msg = "Error occuered while calling the API";
 			throw new BuildStatusProviderException(msg);
 		}
-		String tenantDomain = Utils.getEnvironmentVariable("TENANT_DOMAIN");
+		String tenantDomain = "sam.com";
 		url += "/t/" + tenantDomain + "/webapps/jenkins/"  + "job/" + jobName + "/api/json";
 		log.info("Calling jenkins api : " + url);
 		GetMethod get = new GetMethod(url);
@@ -145,28 +148,15 @@ public class JenkinsBuildStatusProvider implements BuildStatusProvider {
     	String jobName = JenkinsUtility.getJobName(applicationId, version) ;  	
     	
         String buildUrl ="";
-        try {
-            buildUrl = AppFactoryUtil.getAppfactoryConfiguration().getFirstProperty(
-		            "ContinuousIntegrationProvider.jenkins.Property.BaseURL");
-        } catch (AppFactoryException e) {
-            String msg = "Error occuered while calling the API";
-            throw new BuildStatusProviderException(msg);
-        }
-        String tenantDomain = Utils.getEnvironmentVariable("TENANT_DOMAIN");
-        buildUrl += "/t/" + tenantDomain + "/webapps/jenkins/"  + "job/" + jobName + "/api/xml";
+	    buildUrl = "http://localhost:8080";
+	    String tenantDomain = "sam.com";
+        buildUrl += "/jobs/folderrrrr/job/" + jobName + "/api/xml";
         String lastSuccessBuildId = null;
         GetMethod checkJobExistsMethod = new GetMethod(buildUrl);
-        try {
-            getHttpClient().getState().setCredentials(AuthScope.ANY, new UsernamePasswordCredentials(
-		            AppFactoryUtil.getAppfactoryConfiguration().getFirstProperty(
-				            Constants.JENKINS_ADMIN_USERNAME_PATH),
-		            AppFactoryUtil.getAppfactoryConfiguration().getFirstProperty(
-				            Constants.JENKINS_ADMIN_PASSWORD_PATH)));
-        } catch (AppFactoryException e) {
-            String msg = "Error occuered while calling the API";
-            throw new BuildStatusProviderException(msg);
-        }
-        getHttpClient().getParams().setAuthenticationPreemptive(true);
+	    getHttpClient().getState().setCredentials(AuthScope.ANY, new UsernamePasswordCredentials(
+                "jenkinssystemadmin",
+                "password"));
+	    getHttpClient().getParams().setAuthenticationPreemptive(true);
 
         try {
             int httpStatusCode = getHttpClient().executeMethod(checkJobExistsMethod);

@@ -562,7 +562,7 @@ public class RestBasedJenkinsCIConnector {
 
 		try {
 			createJob = createPost(
-					"/createItem",
+					"/job/folderrrrr/createItem",
 					queryParams,
 					new StringRequestEntity(jobConfiguration
 							.toStringWithConsume(), "text/xml", "utf-8"),
@@ -783,7 +783,7 @@ public class RestBasedJenkinsCIConnector {
 		}
 
 		PostMethod startBuildMethod = createPost(
-				String.format("/job/%s/buildWithParameters", jobName),
+				String.format("/job/folderrrrr/job/%s/buildWithParameters", jobName),
 				parameters.toArray(new NameValuePair[parameters.size()]), null,
 				tenantDomain);
 
@@ -1826,9 +1826,7 @@ public class RestBasedJenkinsCIConnector {
 	private String getJenkinsUrlByTenantDomain(String urlFragment,
 			String tenantDomain) {
 		if (tenantDomain != null && !tenantDomain.equals(""))
-			return getJenkinsUrl() + File.separator + Constants.TENANT_SPACE
-					+ File.separator + tenantDomain + Constants.JENKINS_WEBAPPS
-					+ File.separator + urlFragment;
+			return getJenkinsUrl() + urlFragment;
 		else
 			return getJenkinsUrl() + urlFragment;
 	}

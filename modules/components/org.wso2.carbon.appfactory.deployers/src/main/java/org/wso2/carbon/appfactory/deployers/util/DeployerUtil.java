@@ -16,8 +16,6 @@
 
 package org.wso2.carbon.appfactory.deployers.util;
 
-import javax.naming.Context;
-import javax.naming.InitialContext;
 import javax.naming.NamingException;
 import java.io.File;
 import java.util.Map;
@@ -60,10 +58,7 @@ public class DeployerUtil {
 	}
 
 	public static String getJenkinsHome() throws NamingException {
-        InitialContext ic = new InitialContext();
-        // thats everything from the context.xml and from the global configuration
-        Context xmlContext = (Context) ic.lookup("java:comp/env");
-        return (String) xmlContext.lookup("JENKINS_HOME");
+        return "/home/samith/WSO2/AppFactory/Redmine/Jenkins_3757/Deploymnet/test1/run/test_jenkinshome";
     }
 
 }

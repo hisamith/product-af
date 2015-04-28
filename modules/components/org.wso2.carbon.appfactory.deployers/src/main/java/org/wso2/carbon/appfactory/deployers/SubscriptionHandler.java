@@ -83,8 +83,7 @@ public class SubscriptionHandler {
         deployerInfo.put(AppFactoryConstants.RUNTIME_ALIAS_PREFIX, applicationID + tenantDomain
                 .replace(AppFactoryConstants.DOT_SEPERATOR, AppFactoryConstants.SUBSCRIPTION_ALIAS_DOT_REPLACEMENT));
         String repoUrl = null;
-        String className = appfactoryConfiguration.getFirstProperty(
-                AppFactoryConstants.PAAS_ARTIFACT_REPO_PROVIDER_CLASS_NAME);
+        String className = appfactoryConfiguration.getFirstProperty("org.wso2.carbon.appfactory.s4.integration.GITBlitBasedGITRepositoryProvider");
         String adminUserName = appfactoryConfiguration.
                 getFirstProperty(AppFactoryConstants.PAAS_ARTIFACT_REPO_PROVIDER_ADMIN_USER_NAME);
         String adminPassword = appfactoryConfiguration.

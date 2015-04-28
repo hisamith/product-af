@@ -30,23 +30,16 @@ import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.wso2.carbon.appfactory.common.AppFactoryConstants;
 import org.wso2.carbon.appfactory.common.AppFactoryException;
-import org.wso2.carbon.appfactory.common.util.AppFactoryUtil;
 import org.wso2.carbon.appfactory.deployers.AbstractStratosDeployer;
 import org.wso2.carbon.appfactory.deployers.notify.DeployNotifier;
 import org.wso2.carbon.appfactory.deployers.util.DeployerUtil;
-import org.wso2.carbon.appfactory.eventing.AppFactoryEventException;
-import org.wso2.carbon.appfactory.eventing.EventNotifier;
-import org.wso2.carbon.appfactory.eventing.builder.utils.ContinousIntegrationEventBuilderUtil;
 import org.wso2.carbon.appfactory.jenkins.AppfactoryPluginManager;
 import org.wso2.carbon.appfactory.jenkins.api.JenkinsBuildStatusProvider;
-import org.wso2.carbon.appfactory.jenkins.artifact.storage.Utils;
 import org.wso2.carbon.appfactory.jenkins.util.JenkinsUtility;
 
 import javax.naming.NamingException;
 import java.io.File;
 import java.io.IOException;
-import java.util.ArrayList;
-import java.util.List;
 import java.util.Map;
 
 public class JenkinsArtifactDeployer extends AbstractStratosDeployer {
@@ -62,8 +55,9 @@ public class JenkinsArtifactDeployer extends AbstractStratosDeployer {
 		super.setStoragePath(descriptor.getStoragePath());
 		super.setTempPath(descriptor.getTempPath());
 		super.buildStatusProvider = new JenkinsBuildStatusProvider();
-		String tenantDomain = Utils.getEnvironmentVariable("TENANT_DOMAIN");
-		String tenantID = Utils.getEnvironmentVariable("TENANT_ID");
+		// TODO
+		String tenantDomain = "sam.com";
+		String tenantID = "5";
 		super.setTenantDomain(tenantDomain);
 		super.setTenantID(Integer.parseInt(tenantID));
 	}
@@ -84,18 +78,13 @@ public class JenkinsArtifactDeployer extends AbstractStratosDeployer {
 
 		File lastSuccess = new File(path);
 		if (!lastSuccess.exists()) {
-            try {
-                //used for eventing
-                String tenantDomain = getTenantDomain();
-                String correlationKey = applicationId + stageName + version + tenantDomain;
+			//used for eventing
+			String tenantDomain = getTenantDomain();
+			String correlationKey = applicationId + stageName + version + tenantDomain;
+//
+//                EventNotifier.getInstance().notify(ContinousIntegrationEventBuilderUtil.autoDeployStatusChangeEvent(applicationId, tenantDomain, "Application deployment couldn't be done, please try again.", "", correlationKey));
 
-                EventNotifier.getInstance().notify(ContinousIntegrationEventBuilderUtil.autoDeployStatusChangeEvent(applicationId, tenantDomain, "Application deployment couldn't be done, please try again.", "", correlationKey));
-
-            }catch (AppFactoryEventException e) {
-                log.error("Failed to notify deployment of latest successful artifact " + e.getMessage(), e);
-            }
-
-            //We decided to commit because if the this symlink not generated doesn't means there is no build always. There may be build but not create symlink yet.
+			//We decided to commit because if the this symlink not generated doesn't means there is no build always. There may be build but not create symlink yet.
             //So user must know that and redeploy it.
 
             /*
@@ -131,21 +120,19 @@ public class JenkinsArtifactDeployer extends AbstractStratosDeployer {
 	            if (!AppFactoryConstants.FORK_REPOSITORY.equals(repositoryFrom)) {
 		            String tenantDomain = getTenantDomain();
 		            String correlationKey = applicationId + stageName + version + tenantDomain;
-		            EventNotifier.getInstance().notify(
-				            ContinousIntegrationEventBuilderUtil
-						            .buildApplicationDeployementStartedEvent(applicationId, tenantDomain,
-						                "Application deployment started for " + version + " of " + repositoryFrom +
-                                                " repo" , null, correlationKey)); 
+//		            EventNotifier.getInstance().notify(
+//				            ContinousIntegrationEventBuilderUtil
+//						            .buildApplicationDeployementStartedEvent(applicationId, tenantDomain,
+//						                "Application deployment started for " + version + " of " + repositoryFrom +
+//                                                " repo" , null, correlationKey));
 	            }
                     super.deployLatestSuccessArtifact(parameters);
             } catch (AppFactoryException e) {
                 String msg = "deployment of latest success artifact failed for applicaion " + jobName;
                 handleException(msg, e);
-            } catch (AppFactoryEventException e) {
-                log.error("Failed to notify deployment of latest successful artifact " + e.getMessage(), e);
             }
 
-        }
+		}
 
 	}
 
@@ -296,7 +283,7 @@ public class JenkinsArtifactDeployer extends AbstractStratosDeployer {
 			log.error(msg, e);
 			throw new AppFactoryException(msg, e);
 		}
-		String path = jenkinsHome + File.separator + "jobs" + File.separator + jobName +
+		String path = jenkinsHome + File.separator + "jobs/folderrrrr/jobs" + File.separator + jobName +
 		              File.separator + "lastSuccessful";
 		return path;
 	}
@@ -330,20 +317,17 @@ public class JenkinsArtifactDeployer extends AbstractStratosDeployer {
 
 	@Override
 	protected String getBaseRepoUrl() throws AppFactoryException {
-		return AppFactoryUtil.getAppfactoryConfiguration().
-				getFirstProperty(AppFactoryConstants.PAAS_ARTIFACT_REPO_PROVIDER_BASE_URL);
+		return "https://s2git.appfactory.private.wso2.com:8444/";
 	}
 
 	@Override
 	protected String getAdminPassword() throws AppFactoryException {
-		return AppFactoryUtil.getAppfactoryConfiguration().
-				getFirstProperty(AppFactoryConstants.PAAS_ARTIFACT_REPO_PROVIDER_ADMIN_PASSWORD);
+		return "admin";
 	}
 
 	@Override
 	protected String getAdminUserName() throws AppFactoryException {
-		return AppFactoryUtil.getAppfactoryConfiguration().
-				getFirstProperty(AppFactoryConstants.PAAS_ARTIFACT_REPO_PROVIDER_ADMIN_USER_NAME);
+		return "admin";
 	}
 
 	public void deployTaggedArtifact(Map<String, String[]> requestParameters) throws Exception {

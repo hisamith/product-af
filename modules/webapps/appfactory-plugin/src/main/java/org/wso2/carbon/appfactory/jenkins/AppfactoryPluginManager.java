@@ -18,6 +18,12 @@
 
 package org.wso2.carbon.appfactory.jenkins;
 
+import com.nimbusds.jose.JWSAlgorithm;
+import com.nimbusds.jose.JWSHeader;
+import com.nimbusds.jose.JWSSigner;
+import com.nimbusds.jose.crypto.RSASSASigner;
+import com.nimbusds.jwt.JWTClaimsSet;
+import com.nimbusds.jwt.SignedJWT;
 import hudson.Extension;
 import hudson.FilePath;
 import hudson.Launcher;
@@ -33,8 +39,11 @@ import hudson.util.FormValidation;
 import net.sf.json.JSONObject;
 import org.apache.axiom.om.OMElement;
 import org.apache.axiom.om.impl.builder.StAXOMBuilder;
+import org.apache.axiom.util.base64.Base64Utils;
 import org.apache.axis2.AxisFault;
 import org.apache.axis2.client.ServiceClient;
+import org.apache.axis2.transport.http.HTTPConstants;
+import org.apache.commons.httpclient.Header;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.neethi.Policy;
@@ -44,17 +53,26 @@ import org.kohsuke.stapler.QueryParameter;
 import org.kohsuke.stapler.StaplerRequest;
 import org.wso2.carbon.appfactory.application.deployer.stub.ApplicationDeployerAppFactoryExceptionException;
 import org.wso2.carbon.appfactory.application.deployer.stub.ApplicationDeployerStub;
+import org.wso2.carbon.appfactory.build.stub.xsd.BuildStatusBean;
 import org.wso2.carbon.appfactory.common.AppFactoryConstants;
 import org.wso2.carbon.appfactory.common.AppFactoryException;
-import org.wso2.carbon.appfactory.common.util.AppFactoryUtil;
 import org.wso2.carbon.appfactory.jenkins.build.notify.BuildStatusReceiverClient;
-import org.wso2.carbon.appfactory.build.stub.xsd.BuildStatusBean;
 import org.wso2.carbon.utils.CarbonUtils;
 
 import javax.servlet.ServletException;
 import javax.xml.stream.XMLStreamException;
-import java.io.*;
+import java.io.ByteArrayInputStream;
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.IOException;
+import java.io.PrintStream;
+import java.io.Serializable;
 import java.rmi.RemoteException;
+import java.security.KeyStore;
+import java.security.PrivateKey;
+import java.security.interfaces.RSAPrivateKey;
+import java.util.ArrayList;
+import java.util.List;
 
 /**
  * The plugin for storing build artifact permanently, deploy artifacts and
@@ -108,11 +126,17 @@ public class AppfactoryPluginManager extends Notifier implements Serializable {
            logger.append("The build started by " + this.userName + " for " + this.applicationId + " - " +
                       this.applicationVersion + " in " + this.repositoryFrom + " is notified as " + build.getResult());
 
-        final String APPFACTORY_SERVER_URL = getDescriptor().getAppfactoryServerURL();
+            final String APPFACTORY_SERVER_URL = getDescriptor().getAppfactoryServerURL();
         String serviceURL = APPFACTORY_SERVER_URL + BUILDSTATUS_RECEIVER_NAME;
+        System.out.println("***************************************************");
+        System.setProperty("javax.net.ssl.trustStore", "/mnt/10.100.5.95/buildserver/wso2as-5.2" +
+                                                       ".1/repository/resources/security/client-truststore.jks");
+        System.setProperty("javax.net.ssl.clientTrustStorePassword", "wso2carbon");
+        System.out.println();
+        System.out.println(System.getProperty("javax.net.ssl.trustStore"));
         BuildStatusReceiverClient client = new BuildStatusReceiverClient(serviceURL, getDescriptor().getAdminUserName(),
                                                                          getDescriptor().getAdminPassword());
-
+        System.out.println("DDDDD");
         //Getting the tenant user name from the build parameters because we are sending it from AF
         String tenantUserName = build.getBuildVariables().get("tenantUserName");
 
@@ -435,7 +459,7 @@ public class AppfactoryPluginManager extends Notifier implements Serializable {
                 try {
                     clientStub = new ApplicationDeployerStub(applicationDeployerEPR);
                     ServiceClient deployerClient = clientStub._getServiceClient();
-                    AppFactoryUtil.setAuthHeaders(deployerClient, tenantUserName);
+                    setAuthHeaders(deployerClient, tenantUserName);
                     //wait for symlink to appear
                     Thread.sleep(1000);
                     clientStub.deployArtifact(applicationId, stage, version, "", deployAction, repoFrom);
@@ -454,8 +478,45 @@ public class AppfactoryPluginManager extends Notifier implements Serializable {
         });
         clientCaller.start();
     }
-    
-    
+
+    public static void setAuthHeaders(ServiceClient serviceClient, String username) throws AppFactoryException {
+        // Set authorization header to service client
+        List headerList = new ArrayList();
+        Header header = new Header();
+        header.setName(HTTPConstants.HEADER_AUTHORIZATION);
+        header.setValue(getAuthHeader(username));
+        headerList.add(header);
+        serviceClient.getOptions().setProperty(HTTPConstants.HTTP_HEADERS, headerList);
+    }
+
+    public static String getAuthHeader(String username) throws AppFactoryException {
+
+        //Get the filesystem keystore default primary certificate
+//        KeyStoreManager keyStoreManager;
+//        keyStoreManager = KeyStoreManager.getInstance(MultitenantConstants.SUPER_TENANT_ID);
+        String keystoreName = "/mnt/10.100.5.95/buildserver/wso2as-5.2.1/repository/resources/security/wso2carbon.jks";
+        String keystorecredential = "wso2carbon";
+        try {
+            KeyStore ks = KeyStore.getInstance("jks");
+            ks.load(new FileInputStream(keystoreName), keystorecredential.toCharArray());
+            PrivateKey key = (PrivateKey)ks.getKey(keystorecredential, keystorecredential.toCharArray());
+            JWSSigner signer = new RSASSASigner((RSAPrivateKey) key);
+            JWTClaimsSet claimsSet = new JWTClaimsSet();
+            claimsSet.setClaim(AppFactoryConstants.SIGNED_JWT_AUTH_USERNAME, username);
+            SignedJWT signedJWT = new SignedJWT(new JWSHeader(JWSAlgorithm.RS512), claimsSet);
+            signedJWT.sign(signer);
+
+            // generate authorization header value
+            return "Bearer " + Base64Utils.encode(signedJWT.serialize().getBytes());
+        } catch (Exception e) {
+            String msg = "Failed to get primary default certificate";
+            log.error(msg, e);
+            throw new AppFactoryException(msg, e);
+        }
+    }
+
+
+
 
     private Policy getPolicy() throws XMLStreamException {
         String policyString =

@@ -44,4 +44,12 @@ public class JenkinsUtility {
 		String[] jobValues = jobName.split("-");
         return jobValues[1];
     }
+
+    public static String getTenantId(String jobName) {
+        // Job name will be '<ApplicationId>-<version>-default'
+        String[] jobValues = jobName.split("-");
+        return jobValues[0];
+    }
+
+
 }

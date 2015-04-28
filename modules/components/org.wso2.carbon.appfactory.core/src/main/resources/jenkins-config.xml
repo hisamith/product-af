@@ -101,6 +101,8 @@
     <disabled>false</disabled>
     <blockBuildWhenDownstreamBuilding>false</blockBuildWhenDownstreamBuilding>
     <blockBuildWhenUpstreamBuilding>false</blockBuildWhenUpstreamBuilding>
+    <!--<customWorkspace>/home/samith/WSO2/AppFactory/Redmine/Jenkins_3757/Deploymnet/test1/run/test_workspace</customWorkspace>-->
+    <localRepository class="org.wso2.carbon.appfactory.jenkins.extentions.TestJobLocalRepositoryLocator"/>
     <authToken>build</authToken>
     <concurrentBuild>false</concurrentBuild>
     <mavenName>m3</mavenName>
