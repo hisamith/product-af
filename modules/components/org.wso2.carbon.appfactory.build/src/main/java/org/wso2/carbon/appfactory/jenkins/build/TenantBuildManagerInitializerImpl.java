@@ -15,15 +15,22 @@
  */
 package org.wso2.carbon.appfactory.jenkins.build;
 
+import java.io.File;
+import java.io.InputStream;
 import java.rmi.RemoteException;
 
+import org.apache.axiom.om.OMElement;
+import org.apache.axiom.om.impl.builder.StAXOMBuilder;
+import org.apache.axiom.om.xpath.AXIOMXPath;
 import org.apache.axis2.AxisFault;
 import org.apache.axis2.client.ServiceClient;
+import org.apache.commons.httpclient.NameValuePair;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.wso2.carbon.appfactory.buildserver.teanant.mgt.stub.BuildServerManagementServiceBuildServerManagementExceptionException;
 import org.wso2.carbon.appfactory.buildserver.teanant.mgt.stub.BuildServerManagementServiceStub;
 import org.wso2.carbon.appfactory.common.AppFactoryConstants;
+import org.wso2.carbon.appfactory.common.AppFactoryException;
 import org.wso2.carbon.appfactory.core.TenantBuildManagerInitializer;
 import org.wso2.carbon.appfactory.jenkins.build.internal.ServiceContainer;
 import org.wso2.carbon.utils.CarbonUtils;
@@ -71,5 +78,48 @@ public class TenantBuildManagerInitializerImpl implements
 			log.error(msg, e);
 		}
 
+	}
+
+	/**
+	 * Set values in OmElement
+	 *
+	 * @param template Jenkins job configuration template
+	 * @param selector Selector of the template
+	 * @param value    related value from the project
+	 * @throws org.wso2.carbon.appfactory.common.AppFactoryException
+	 */
+	protected void setValueUsingXpath(OMElement template, String selector, String value)
+			throws AppFactoryException {
+
+		try {
+			AXIOMXPath axiomxPath = new AXIOMXPath(selector);
+			Object selectedObject = axiomxPath.selectSingleNode(template);
+
+			if (selectedObject != null && selectedObject instanceof OMElement) {
+				OMElement svnRepoPathElement = (OMElement) selectedObject;
+				svnRepoPathElement.setText(value);
+			} else {
+				log.warn("Unable to find xml element matching selector : " + selector);
+			}
+
+		} catch (Exception e) {
+			String msg = "Error while setting values using Xpath selector:" + selector;
+			log.error(msg, e);
+			throw new AppFactoryException(msg, e);
+		}
+	}
+
+	protected void test(String tenantDomain) throws AppFactoryException {
+		InputStream inputStream =
+				this.getClass().getResourceAsStream(File.separator + "samtest_config.xml");
+		StAXOMBuilder builder = new StAXOMBuilder(inputStream);
+		OMElement buildTemplate = builder.getDocumentElement();
+		setValueUsingXpath(buildTemplate,
+		                   "displayName",
+		                   tenantDomain);
+		setValueUsingXpath(buildTemplate,
+		                   "description",
+		                   "Sample for "+tenantDomain);
+		NameValuePair[] queryParams = { new NameValuePair(AppFactoryConstants.JOB_NAME_KEY, tenantDomain) };
 	}
 }
